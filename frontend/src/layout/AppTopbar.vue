@@ -1,5 +1,7 @@
 <script setup>
 import { useLayout } from '@/layout/composables/layout';
+import { accLogout } from '@/service/acc.service';
+import { arcgisLogout } from '@/service/arcgis.service';
 import { ref } from 'vue';
 
 const { onMenuToggle, toggleDarkMode, isDarkTheme } = useLayout();
@@ -27,7 +29,8 @@ const selectedProject = ref(projects.value.find((project) => project.id === 1));
             </router-link>
         </div>
         <div class="flex justify-center gap-4">
-            <Select v-model="selectedProject" :options="projects" optionLabel="name" placeholder="Select a Project" variant="filled" />
+            <Select v-model="selectedProject" :options="projects" optionLabel="name" placeholder="Select a Project"
+                variant="filled" />
         </div>
 
         <div class="layout-topbar-actions">
@@ -37,8 +40,13 @@ const selectedProject = ref(projects.value.find((project) => project.id === 1));
                 </button>
             </div>
         </div>
+
+        <div class="layout-topbar-logout">
+            <button type="button" class="layout-topbar-action" v-tooltip="'Logout'" @click=" accLogout(); arcgisLogout();">
+                <i class="pi pi-sign-out"></i>
+            </button>
+        </div>
     </div>
 </template>
 
-<style scoped>
-</style>
+<style scoped></style>

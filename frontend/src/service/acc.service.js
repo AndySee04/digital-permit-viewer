@@ -149,4 +149,14 @@ export const accAccount = async () => {
   } catch (error) {
     
   }
-}
+};
+
+export const accLogout = async () => {
+  try {
+    localStorage.removeItem("acc_accessToken");
+    localStorage.removeItem("acc_expiresIn");
+    localStorage.removeItem("acc_expirationTime");
+    setAccCookie("acc_refreshToken", "", -1);
+  } catch (error) {
+    console.error("Error during ACC logout:", error);}  
+};

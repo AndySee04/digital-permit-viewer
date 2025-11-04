@@ -19,6 +19,22 @@ const oAuthInfo = new OAuthInfo({
 // Register OAuth Info
 esriId.registerOAuthInfos([oAuthInfo]);
 
+const registerCredential = (credential) => {
+    if (!credential || !credential.token) {
+        console.warn("ArcGIS: Attempted to register an invalid credential");
+        return false;
+    }
+
+    esriId.registerToken({
+        server: `${arcGisPortalUrl}/sharing/rest`,
+        token: credential.token,
+        expires: credential.expires,
+        ssl: credential.ssl,
+    });
+
+    return true;
+};
+
 // ---------------------------------------------------------------------------
 // Auto login by generating token
 export const autoLogin = async () => {
@@ -41,20 +57,31 @@ export const autoLogin = async () => {
         );
 
         const data = await response.json();
+        if (!response.ok || data.error) {
+            throw new Error(
+                data.error?.message || "Failed to generate ArcGIS token",
+            );
+        }
         const credential = {
             token: data.token,
             expires: data.expires,
             ssl: data.ssl,
         };
 
+        if (!registerCredential(credential)) {
+            console.error(
+                "ArcGIS: Failed to register credential after auto login",
+            );
+            return false;
+        }
+
         // Save to localStorage
         localStorage.setItem("arcgisCredential", JSON.stringify(credential));
-        console.log("Auto login successful");
+        console.log("ArcGIS: Auto login successful");
 
-        // Reload to apply credentials with esriId
-        window.location.reload();
+        return credential;
     } catch (error) {
-        console.error("Auto login failed:", error);
+        console.error("ArcGIS: Auto login failed:", error);
         return false;
     }
 };
@@ -62,35 +89,32 @@ export const autoLogin = async () => {
 // Restore credentials from localStorage
 export const restoreCredentials = async () => {
     try {
-        const savedCredential = localStorage.getItem('arcgisCredential');
+        const savedCredential = localStorage.getItem("arcgisCredential");
 
         if (savedCredential) {
             const credential = JSON.parse(savedCredential);
 
-            // Register the token with esriId
-            esriId.registerToken({
-                server: `${arcGisPortalUrl}/sharing/rest`,
-                token: credential.token,
-                expires: credential.expires,
-                ssl: credential.ssl
-            });
-
             // Check if token is expired
             const now = Date.now();
             if (credential.expires && credential.expires < now) {
-                localStorage.removeItem('arcgisCredential');
+                localStorage.removeItem("arcgisCredential");
+                return await autoLogin();
+            }
+
+            if (!registerCredential(credential)) {
+                localStorage.removeItem("arcgisCredential");
                 return await autoLogin();
             }
 
             // Success log
-            console.log("ArcGISCredentials restored from localStorage");
-            return true;
-        } else {
-            // No saved credential, perform auto login
-            return await autoLogin();
+            console.log("ArcGISCredentials: Restored from localStorage");
+            return credential;
         }
+
+        // No saved credential, perform auto login
+        return await autoLogin();
     } catch (error) {
-        console.error('Error restoring credentials:', error);
+        console.error("Error restoring credentials:", error);
         return false;
     }
 };
@@ -99,9 +123,9 @@ export const restoreCredentials = async () => {
 export const arcgisLogout = async () => {
     try {
         esriId.destroyCredentials();
-        localStorage.removeItem('arcgisCredential');
+        localStorage.removeItem("arcgisCredential");
         window.location.reload();
     } catch (error) {
-        console.error('Error during logout:', error);
+        console.error("Error during logout:", error);
     }
 };

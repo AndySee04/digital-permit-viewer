@@ -83,7 +83,7 @@ export const restoreCredentials = async () => {
             }
 
             // Success log
-            console.log("Credentials restored from localStorage");
+            console.log("ArcGISCredentials restored from localStorage");
             return true;
         } else {
             // No saved credential, perform auto login

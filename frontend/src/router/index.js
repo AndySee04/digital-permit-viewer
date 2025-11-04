@@ -1,4 +1,5 @@
 import AppLayout from "@/layout/AppLayout.vue";
+import { getAccCookie } from "@/utils/accCookie";
 import { createRouter, createWebHistory } from "vue-router";
 
 const router = createRouter({
@@ -30,12 +31,14 @@ const router = createRouter({
                     name: "acc-callback",
                     component: () =>
                         import("@/views/pages/auth/CallBackACC.vue"),
+                    meta: { public: true },
                 },
                 {
                     path: "/gis/auth/callback",
                     name: "arcgis-callback",
                     component: () =>
                         import("@/views/pages/auth/CallBackArcGis.vue"),
+                    meta: { public: true },
                 },
                 {
                     path: "/drag",
@@ -44,47 +47,40 @@ const router = createRouter({
                 },
             ],
         },
-        // {
-        //     path: "/auth/login",
-        //     name: "login",
-        //     component: () => import("@/views/pages/auth/Login.vue"),
-        //     meta: {public: true}
-        // },
         {
-            path: "/webmap",
-            name: "webmap",
-            component: () => import("@/views/Webmap.vue"),
-            meta: {public: true},
+            path: "/auth/login",
+            name: "login",
+            component: () => import("@/views/pages/auth/Login.vue"),
+            meta: { public: true },
         },
     ],
 });
 
-router.beforeEach(async (to, from) => {
-    if (to.meta.auth) {
-        const arcgisCredential = JSON.parse(
-            localStorage.getItem("arcgisCredential"),
-        );
+router.beforeEach(async (to) => {
+    // Always allow explicitly public routes
+    if (to.meta && to.meta.public) return true;
 
-        if (!arcgisCredential) {
-            // If no credential is found, redirect to login
-            return { name: "login" };
-        }
+    if (to.meta && to.meta.auth) {
+        // Check ACC refresh token is already present and valid
+        const accRefreshToken = getAccCookie("acc_refreshToken");
 
-        // Get the current time in milliseconds
-        const currentTime = Date.now();
+        // Check ArcGIS credential is already present and valid
+        let hasValidArcGis = false;
+        try {
+            const arc = JSON.parse(
+                localStorage.getItem("arcgisCredential") || "null",
+            );
+            if (arc && arc.expires && Date.now() <= arc.expires) {
+                hasValidArcGis = true;
+            }
+        } catch {}
 
-        // Check if the credential is expired
-        if (currentTime > arcgisCredential.expires) {
-            // If expired, clear the credential and redirect to login
-            localStorage.removeItem("arcgisCredential");
-            return { name: "login" };
-        }
+        if (accRefreshToken || hasValidArcGis) 
+            return true;
 
-        // If the credential is valid, allow navigation
-        return true;
+        return { name: "login" };
     }
 
-    // If the route does not require authentication, allow navigation
     return true;
 });
 

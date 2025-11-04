@@ -2,7 +2,7 @@ import AppLayout from "@/layout/AppLayout.vue";
 import { createRouter, createWebHistory } from "vue-router";
 
 const router = createRouter({
-    history: createWebHistory('/digital-permit/'),
+    history: createWebHistory("/digital-permit/"),
     routes: [
         {
             path: "/",
@@ -44,11 +44,17 @@ const router = createRouter({
                 },
             ],
         },
+        // {
+        //     path: "/auth/login",
+        //     name: "login",
+        //     component: () => import("@/views/pages/auth/Login.vue"),
+        //     meta: {public: true}
+        // },
         {
-            path: "/auth/login",
-            name: "login",
-            component: () => import("@/views/pages/auth/Login.vue"),
-            meta: {public: true}
+            path: "/webmap",
+            name: "webmap",
+            component: () => import("@/views/Webmap.vue"),
+            meta: {public: true},
         },
     ],
 });

@@ -75,10 +75,14 @@ router.beforeEach(async (to) => {
             }
         } catch {}
 
-        if (accRefreshToken || hasValidArcGis) 
-            return true;
+        if (accRefreshToken || hasValidArcGis) return true;
 
-        return { name: "login" };
+        // Redirect to login page with the original URL
+        const redirectPath = to.fullPath;
+        return {
+            name: "login",
+            query: { redirect: redirectPath },
+        };
     }
 
     return true;

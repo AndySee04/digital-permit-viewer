@@ -2,14 +2,28 @@
 import { accLogin, listenForAuthMessage } from '@/service/acc.service';
 import { getAccCookie } from '@/utils/accCookie';
 import { onMounted, onUnmounted, ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 
 const router = useRouter();
+const route = useRoute();
 const isLoading = ref(false);
 const error = ref(null);
 
 const navigateToApp = async () => {
     try {
+        const redirectPath = route.query.redirect;
+        if (redirectPath && typeof redirectPath === 'string') {
+            // Check if the redirect path contains formid
+            const url = new URL(redirectPath, window.location.origin);
+            const formid = url.searchParams.get('formid');
+
+            // Only route to the redirect path if formid is present
+            if (formid) {
+                await router.push(redirectPath);
+                return;
+            }
+        }
+        // Default route (to /webmap)
         await router.push('/webmap');
     } catch (err) {
         console.error('Navigation error:', err);

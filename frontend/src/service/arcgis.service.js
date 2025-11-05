@@ -124,7 +124,6 @@ export const arcgisLogout = async () => {
     try {
         esriId.destroyCredentials();
         localStorage.removeItem("arcgisCredential");
-        window.location.reload();
     } catch (error) {
         console.error("Error during logout:", error);
     }

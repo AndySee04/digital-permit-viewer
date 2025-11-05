@@ -4,7 +4,6 @@
       <div>
         <Button icon="pi pi-filter" text @click="toggle" v-tooltip="'Filter'" />
       </div>
-      <Avatar :label="avatarLabel" shape="circle" v-tooltip="`${avatarTooltip}`" />
     </div>
     <div class="mt-0 scroll-container" ref="scrollContainer" @scroll="handleScroll">
       <PanelMenu :model="filteredMenuItems" style="margin: 0.5rem;">
@@ -63,7 +62,7 @@
 
 <script setup>
 import { useAccStore } from '@/store/accStore';
-import { onMounted, ref, computed, watch, onUnmounted } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 
 const accStore = useAccStore();
 const scrollContainer = ref(null);
@@ -73,12 +72,9 @@ const noMoreItems = ref(false);
 
 const emit = defineEmits(['formSelected']);
 
-const avatarLabel = ref('');
-const avatarTooltip = ref('');
-
 const op = ref();
 const selectedStatus = ref(null);
-const statusOptions = ref(['Approval', 'Revocation', 'Pending']); 
+const statusOptions = ref(['Approval', 'Revocation', 'Pending']);
 
 const toggle = (event) => {
   op.value.toggle(event);
@@ -143,13 +139,13 @@ const selectStatus = (status) => {
 
 const filteredMenuItems = computed(() => {
   console.log("Total menu items:", menuItems.value.length);
-  
+
   let filteredItems = menuItems.value.filter((item) => {
     const isPermit = item.label.toLowerCase().includes("permit");
     const hasApprovalStatus = item.form?.customValues?.some(
       field => field.itemLabel === '[_status] [Pending,Pending,Pending,Approval,Revocation,_,_]' && field.valueName === 'textVal'
     );
-    
+
     if (selectedStatus.value) {
       if (!hasApprovalStatus) return false;
       const statusField = item.form.customValues.find(
@@ -157,7 +153,7 @@ const filteredMenuItems = computed(() => {
       );
       return isPermit && statusField.textVal === selectedStatus.value;
     }
-    
+
     // WORKAROUND: remove hasApprovalStatus if received form template acc
     return isPermit && hasApprovalStatus;
   });
@@ -192,10 +188,10 @@ const loadMoreItems = async () => {
   loading.value = true;
   try {
     await accStore.fetchForms(true); // true indicates load more
-    
+
     // If we still don't have enough filtered items, load more
-    if (filteredMenuItems.value.length < 10 && 
-        accStore.pagination.offset < accStore.pagination.totalResults) {
+    if (filteredMenuItems.value.length < 10 &&
+      accStore.pagination.offset < accStore.pagination.totalResults) {
       setTimeout(loadMoreItems, 300);
     }
   } finally {
@@ -311,18 +307,6 @@ watch(
 //   { deep: true, immediate: true }
 // );
 
-const avatar = async () => {
-  try {
-    const firstName = accStore.user?.firstName || '';
-    const lastName = accStore.user?.lastName || '';
-
-    avatarLabel.value = `${firstName.charAt(0)}${lastName.charAt(0)}`;
-    avatarTooltip.value = `${firstName} ${lastName}`;
-  } catch (error) {
-    console.error('Error fetching ACC_ME:', error);
-  }
-};
-
 const loadForms = async () => {
   loading.value = true;
   try {
@@ -331,10 +315,10 @@ const loadForms = async () => {
     await accStore.fetchForms(); // false indicates initial load
     // fetchStatusOptions();
     error.value = accStore.error;
-    
+
     // Initial check for more items
-    if (filteredMenuItems.value.length < 10 && 
-        accStore.pagination.offset < accStore.pagination.totalResults) {
+    if (filteredMenuItems.value.length < 10 &&
+      accStore.pagination.offset < accStore.pagination.totalResults) {
       loadMoreItems();
     }
   } finally {
@@ -343,8 +327,6 @@ const loadForms = async () => {
 };
 
 onMounted(async () => {
-  await accStore.fetchUsers();
-  await avatar();
   await loadForms();
 
   // Check if more items are needed immediately after loading

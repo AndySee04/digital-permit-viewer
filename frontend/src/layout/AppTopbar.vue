@@ -2,9 +2,11 @@
 import { useLayout } from '@/layout/composables/layout';
 import { accLogout } from '@/service/acc.service';
 import { arcgisLogout } from '@/service/arcgis.service';
-import { ref } from 'vue';
+import { useAccStore } from '@/store/accStore';
+import { onMounted, ref } from 'vue';
 
 const { onMenuToggle, toggleDarkMode, isDarkTheme } = useLayout();
+const accStore = useAccStore();
 
 // TODO: integrate project api from backend
 const projects = ref([
@@ -12,6 +14,26 @@ const projects = ref([
 ])
 
 const selectedProject = ref(projects.value.find((project) => project.id === 1));
+
+const avatarLabel = ref('');
+const avatarTooltip = ref('');
+
+const avatar = async () => {
+    try {
+        const firstName = accStore.user?.firstName || '';
+        const lastName = accStore.user?.lastName || '';
+
+        avatarLabel.value = `${firstName.charAt(0)}${lastName.charAt(0)}`;
+        avatarTooltip.value = `${firstName} ${lastName}`;
+    } catch (error) {
+        console.error('Error setting avatar:', error);
+    }
+};
+
+onMounted(async () => {
+    await accStore.fetchUsers();
+    await avatar();
+});
 </script>
 
 <template>
@@ -38,13 +60,12 @@ const selectedProject = ref(projects.value.find((project) => project.id === 1));
                 <button type="button" class="layout-topbar-action" @click="toggleDarkMode">
                     <i :class="['pi', { 'pi-moon': isDarkTheme, 'pi-sun': !isDarkTheme }]"></i>
                 </button>
+                <button type="button" class="layout-topbar-action" v-tooltip="'Logout'"
+                    @click=" accLogout(); arcgisLogout();">
+                    <i class="pi pi-sign-out"></i>
+                </button>
+                <Avatar :label="avatarLabel" shape="circle" v-tooltip="`${avatarTooltip}`" class="layout-topbar-avatar" />
             </div>
-        </div>
-
-        <div class="layout-topbar-logout">
-            <button type="button" class="layout-topbar-action" v-tooltip="'Logout'" @click=" accLogout(); arcgisLogout();">
-                <i class="pi pi-sign-out"></i>
-            </button>
         </div>
     </div>
 </template>

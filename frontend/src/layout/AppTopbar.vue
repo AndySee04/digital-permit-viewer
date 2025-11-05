@@ -38,6 +38,12 @@ const handleLogout = async () => {
     window.location.href = router.resolve({ name: 'login' }).href;
 };
 
+const handleLogoClick = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    window.location.href = router.resolve({ name: 'webmap' }).href;
+};
+
 onMounted(async () => {
     await accStore.fetchUsers();
     await avatar();
@@ -46,7 +52,7 @@ onMounted(async () => {
 
 <template>
     <div class="layout-topbar">
-        <div class="layout-topbar-logo-container">
+        <div class="layout-topbar-logo-container" @click="handleLogoClick">
             <!-- <button class="layout-menu-button layout-topbar-action" @click="onMenuToggle">
                 <i class="pi pi-bars"></i>
             </button> -->

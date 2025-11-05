@@ -1,20 +1,22 @@
 <script setup>
-import { ref, onMounted, computed, watch } from "vue";
-import MapView from "@arcgis/core/views/MapView";
-import WebMap from "@arcgis/core/WebMap";
-import esriConfig from "@arcgis/core/config";
-import Print from "@arcgis/core/widgets/Print";
-import Legend from "@arcgis/core/widgets/Legend";
-import { useToast } from "primevue/usetoast";
-import { imageryMap, streetMap } from "@/utils/basemap";
-import { useBasemapStore } from "@/store/basemapStore";
-import AuthACC from "./pages/auth/AuthACC.vue";
 import DrawerWebmap from "@/layout/DrawerWebmap.vue";
 import DrawerWebmapRight from "@/layout/DrawerWebmapRight.vue";
 import { restoreCredentials } from "@/service/arcgis.service";
+import { useAccStore } from "@/store/accStore";
+import { useBasemapStore } from "@/store/basemapStore";
+import { imageryMap, streetMap } from "@/utils/basemap";
+import esriConfig from "@arcgis/core/config";
+import MapView from "@arcgis/core/views/MapView";
+import WebMap from "@arcgis/core/WebMap";
+import Legend from "@arcgis/core/widgets/Legend";
+import Print from "@arcgis/core/widgets/Print";
+import { useToast } from "primevue/usetoast";
+import { onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import AuthACC from "./pages/auth/AuthACC.vue";
 
 const basemapStore = useBasemapStore();
+const accStore = useAccStore();
 
 esriConfig.apiKey = import.meta.env.VITE_ARCGIS_CONFIG_APIKEY;
 esriConfig.portalUrl = import.meta.env.VITE_ARCGIS_PORTAL_URL;
@@ -35,6 +37,7 @@ const treeNodes = ref([]);
 const selectedNodes = ref({});
 
 const isDrawerOpen = ref(false);
+const drawerTitle = ref('');
 
 const isRightDrawerOpen = ref(false);
 const selectedForm = ref(null);
@@ -646,6 +649,68 @@ onMounted(async () => {
 			// Zoom to the feature
 			await zoomToFeature(route.query.formid);
 
+			// Open both sidebars
+			// Open left drawer (Permit sidebar) first
+			drawerTitle.value = 'Permit';
+			isDrawerOpen.value = true;
+
+			// Wait for Permit component to mount and load forms
+			await new Promise(resolve => setTimeout(resolve, 1000));
+
+			const formId = route.query.formid;
+			const normalizedFormId = formId.replace(/[{}]/g, '').toLowerCase();
+
+			// Helper to find form by normalized ID
+			const findFormById = (id) => {
+				const normalize = (val) => String(val).replace(/[{}]/g, '').toLowerCase();
+				return accStore.items.find(item => item.form?.id && normalize(item.form.id) === id)?.form ||
+					accStore.forms.find(form => normalize(form.id) === id);
+			};
+
+			let matchingForm = findFormById(normalizedFormId);
+
+			// Load more forms if not found 
+			const maxIterations = 100; // Safety limit
+			let iterations = 0;
+
+			while (!matchingForm && accStore.pagination.offset < accStore.pagination.totalResults && iterations < maxIterations) {
+				const previousOffset = accStore.pagination.offset;
+
+				try {
+					await accStore.fetchForms(true);
+
+					// Check if offset did not increase
+					if (accStore.pagination.offset === previousOffset) {
+						console.warn('Pagination offset did not increase, breaking loop to prevent infinite loop');
+						break;
+					}
+
+					// Check if error fetching forms
+					if (accStore.error) {
+						console.warn('Error fetching forms, breaking loop:', accStore.error);
+						break;
+					}
+
+					matchingForm = findFormById(normalizedFormId);
+					iterations++;
+				} catch (error) {
+					console.error('Error in form fetch loop:', error);
+					break;
+				}
+			}
+
+			if (iterations >= maxIterations) {
+				console.warn('Reached maximum iterations while searching for form');
+			}
+
+			if (matchingForm) {
+				// Set in store (Permit component will emit formSelected event)
+				accStore.setSelectedForm(matchingForm);
+				// HandleFormSelected will be called via Permit component's watcher
+			} else {
+				console.warn('Form not found:', formId);
+			}
+
 			console.log('popup', popupData.value);
 		}
 	}
@@ -663,7 +728,8 @@ onMounted(async () => {
 					<div ref="mapViewDiv" style="height: 94vh; width: 100%; position: relative; overflow: hidden;">
 						<div class="absolute bottom-[65px] right-[10px] flex flex-col gap-2">
 							<!-- Reset filter button -->
-							<Button @click="resetAllFilters" icon="pi pi-filter-slash" rounded v-tooltip="'Reset layer filter'" />
+							<Button @click="resetAllFilters" icon="pi pi-filter-slash" rounded
+								v-tooltip="'Reset layer filter'" />
 
 							<!-- Print button -->
 							<Button @click="hidePrint" icon="pi pi-print" rounded
@@ -677,21 +743,24 @@ onMounted(async () => {
 						<!-- Speed dial button(change view) -->
 						<SpeedDial :model="speedDialItems" direction="left" :tooltipOptions="{ position: 'bottom' }"
 							style="position: absolute; bottom: 25px; right: 10px" />
-						<div v-if="loadingZoom" class="flex items-center justify-center h-full w-full absolute top-0 left-0 bg-black bg-opacity-50">
+						<div v-if="loadingZoom"
+							class="flex items-center justify-center h-full w-full absolute top-0 left-0 bg-black bg-opacity-50">
 							<ProgressSpinner />
 						</div>
-						<DrawerWebmap v-model="isDrawerOpen" @close-drawers="handleCloseDrawers" style="position: absolute;">
-							<template #default="{ drawerTitle }">
-								<div v-if="drawerTitle === 'Layer'">
-									<Tree v-model:selectionKeys="selectedNodes" :value="treeNodes" selectionMode="checkbox"
-										style="margin: 0; padding: 0" />
+						<DrawerWebmap v-model="isDrawerOpen" :title="drawerTitle" @close-drawers="handleCloseDrawers"
+							style="position: absolute;">
+							<template #default="{ drawerTitle: slotTitle }">
+								<div v-if="slotTitle === 'Layer'">
+									<Tree v-model:selectionKeys="selectedNodes" :value="treeNodes"
+										selectionMode="checkbox" style="margin: 0; padding: 0" />
 								</div>
-								<div class="h-full" v-else-if="drawerTitle === 'Permit'">
+								<div class="h-full" v-else-if="slotTitle === 'Permit'">
 									<AuthACC @formSelected="handleFormSelected" />
 								</div>
 							</template>
 						</DrawerWebmap>
-						<DrawerWebmapRight v-model="isRightDrawerOpen" :selectedForm="selectedForm" @show-area="handleShowArea" />
+						<DrawerWebmapRight v-model="isRightDrawerOpen" :selectedForm="selectedForm"
+							@show-area="handleShowArea" />
 					</div>
 				</div>
 			</div>

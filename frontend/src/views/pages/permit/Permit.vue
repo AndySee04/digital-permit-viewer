@@ -8,7 +8,15 @@
     <div class="mt-0 scroll-container" ref="scrollContainer" @scroll="handleScroll">
       <PanelMenu :model="filteredMenuItems" style="margin: 0.5rem;">
         <template #item="{ item }">
-          <a v-ripple class="flex items-center px-4 py-2 cursor-pointer group">
+          <a v-ripple :class="[
+            'flex items-center px-4 py-2 cursor-pointer group',
+            {
+              'bg-primary-50 dark:bg-primary-900 border-l-4 border-primary':
+                item.form?.id && accStore.selectedForm?.id &&
+                String(item.form.id).replace(/[{}]/g, '').toLowerCase() ===
+                String(accStore.selectedForm.id).replace(/[{}]/g, '').toLowerCase()
+            }
+          ]">
             <div class="flex flex-col w-full">
               <span :class="[{ 'font-semibold': item.items }]">{{ item.label }}</span>
               <div class="flex justify-between items-center">
@@ -278,15 +286,12 @@ const statusClass = (status, type = 'class') => {
   return type === 'class' ? result.class : result.severity;
 };
 
-watch(
-  () => accStore.selectedForm,
-  (newForm) => {
-    if (newForm) {
-      emit('formSelected', newForm);
-    }
-  },
-  { immediate: false }
-);
+// Emit formSelected when form is selected in store
+watch(() => accStore.selectedForm, (newForm) => {
+  if (newForm) {
+    emit('formSelected', newForm);
+  }
+});
 
 // Watch for filter status changes to check if more items are needed
 watch(

@@ -57,6 +57,10 @@ const props = defineProps({
   modelValue: {
     type: Boolean,
     default: false
+  },
+  title: {
+    type: String,
+    default: ''
   }
 });
 
@@ -83,9 +87,18 @@ const closeDrawer = () => {
   emit('close-drawers');
 };
 
-// Watch for external control of drawer
+// Watch for external control of drawer and title
 watch(() => props.modelValue, (newValue) => {
   isDrawerOpen.value = newValue;
+});
+
+watch(() => props.title, (newTitle) => {
+  if (newTitle) {
+    drawerTitle.value = newTitle;
+    if (props.modelValue) {
+      isDrawerOpen.value = true;
+    }
+  }
 });
 </script>
 
@@ -98,7 +111,8 @@ watch(() => props.modelValue, (newValue) => {
   background: var(--surface-card);
   height: 100%;
   width: 60px;
-  z-index: 10; /* Ensure it appears above the map */
+  z-index: 10;
+  /* Ensure it appears above the map */
   cursor: auto;
 }
 
@@ -112,8 +126,10 @@ watch(() => props.modelValue, (newValue) => {
 .web-map-drawer {
   position: absolute;
   top: 0;
-  left: 60px; /* Align next to the drawer container */
-  width: 40vw; /* Width of the drawer */
+  left: 60px;
+  /* Align next to the drawer container */
+  width: 40vw;
+  /* Width of the drawer */
   max-width: 350px;
   height: 100%;
   background-color: var(--surface-card);
@@ -192,21 +208,25 @@ watch(() => props.modelValue, (newValue) => {
 /* Responsive Adjustments */
 @media (max-width: 768px) {
   .web-map-drawer-container {
-    width: 60px; /* Keep the width fixed */
+    width: 60px;
+    /* Keep the width fixed */
   }
 
   .web-map-drawer {
-    width: 60vw; /* Adjust the drawer width */
+    width: 60vw;
+    /* Adjust the drawer width */
   }
 }
 
 @media (max-width: 480px) {
   .web-map-drawer-container {
-    width: 60px; /* Keep the width fixed */
+    width: 60px;
+    /* Keep the width fixed */
   }
 
   .web-map-drawer {
-    width: 80vw; /* Adjust the drawer width */
+    width: 80vw;
+    /* Adjust the drawer width */
   }
 }
 

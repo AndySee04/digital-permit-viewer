@@ -85,11 +85,9 @@ onUnmounted(() => {
             </div>
             <div>
                 <div class="space-y-4">
-                    <Button 
-                        class="!bg-black !border-black !text-white hover:!bg-black/90"
-                        :loading="isLoading" @click="handleLogin"
-                        v-tooltip.bottom="'Login with your Autodesk Construction Cloud account'">
-                            {{ isLoading ? 'Signing in...' : 'Login with ACC' }}
+                    <Button class="!bg-black !border-black !text-white hover:!bg-black/90" :loading="isLoading"
+                        @click="handleLogin" v-tooltip.bottom="'Login with your Autodesk Construction Cloud account'">
+                        {{ isLoading ? 'Signing in...' : 'Login with ACC' }}
                     </Button>
                 </div>
             </div>

@@ -31,7 +31,12 @@
           <!-- Drawer Header -->
           <div class="drawer-header">
             <h2>{{ drawerTitle }}</h2>
-            <Button icon="pi pi-times" class="close-button" @click="closeDrawer" text rounded />
+            <button type="button" class="close-button" @click="closeDrawer" aria-label="Close">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" />
+              </svg>
+            </button>
           </div>
 
           <!-- Drawer Body -->
@@ -86,13 +91,13 @@ watch(() => props.modelValue, (newValue) => {
 
 <style scoped>
 .web-map-drawer-container {
-  position: fixed; 
+  position: fixed;
   top: 10;
   left: 0;
   padding: 10px;
   background: var(--surface-card);
-  height: 100%; 
-  width: 60px; 
+  height: 100%;
+  width: 60px;
   z-index: 10; /* Ensure it appears above the map */
   cursor: auto;
 }
@@ -148,6 +153,28 @@ watch(() => props.modelValue, (newValue) => {
 
 .close-button {
   margin-left: auto;
+  background: transparent;
+  border: 2px solid #ef4444;
+  border-radius: 50%;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  color: #ef4444;
+  transition: all 0.2s ease;
+}
+
+.close-button svg {
+  stroke: currentColor;
+}
+
+.close-button:hover {
+  color: #dc2626;
+  border-color: #dc2626;
+  background-color: rgba(239, 68, 68, 0.1);
 }
 
 /* Style for the active drawer trigger button */
@@ -159,7 +186,7 @@ watch(() => props.modelValue, (newValue) => {
 } */
 
 .active-drawer .material-symbols-outlined {
-  color: var(--text-color); 
+  color: var(--text-color);
 }
 
 /* Responsive Adjustments */

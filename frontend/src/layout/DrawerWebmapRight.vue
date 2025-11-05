@@ -5,7 +5,12 @@
         <!-- Drawer Header -->
         <div class="drawer-header">
           <h1 class="text-xl">{{ selectedForm?.name }}</h1>
-          <Button icon="pi pi-times" class="close-button" @click="closeDrawer" text rounded />
+          <button type="button" class="close-button" @click="closeDrawer" aria-label="Close">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round" />
+            </svg>
+          </button>
         </div>
 
         <!-- Drawer Body -->
@@ -59,7 +64,8 @@
               <div class="flex flex-col gap-3">
                 <h3 class="font-medium text-xl">Permit Area</h3>
                 <div class="flex justify-center gap-4 px-4">
-                  <Button @click="showArea" icon="pi pi-search" label="Show Area" severity="info" outlined size="small" />
+                  <Button @click="showArea" icon="pi pi-search" label="Show Area" severity="info" outlined
+                    size="small" />
                 </div>
               </div>
 

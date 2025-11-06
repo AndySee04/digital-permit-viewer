@@ -635,83 +635,90 @@ onMounted(async () => {
 	await restoreCredentials();
 	await initializeMapView();
 	if (route.query.formid) {
-		const feature = await findFeatureByFormId(route.query.formid);
-		if (feature) {
-			// Set the selected feature and popup data
-			selectedFeature.value = feature;
-			popupData.value = {
-				attributes: feature.attributes,
-				layerName: feature.layer?.title,
-				title: feature.layer?.popupTemplate?.title,
-				content: feature.layer?.popupTemplate?.content
-			};
+		loadingZoom.value = true; 
+		try {
+			const feature = await findFeatureByFormId(route.query.formid);
+			if (feature) {
+				// Set the selected feature and popup data
+				selectedFeature.value = feature;
+				popupData.value = {
+					attributes: feature.attributes,
+					layerName: feature.layer?.title,
+					title: feature.layer?.popupTemplate?.title,
+					content: feature.layer?.popupTemplate?.content
+				};
 
-			// Zoom to the feature
-			await zoomToFeature(route.query.formid);
+				// Zoom to the feature
+				await zoomToFeature(route.query.formid);
 
-			// Open both sidebars
-			// Open left drawer (Permit sidebar) first
-			drawerTitle.value = 'Permit';
-			isDrawerOpen.value = true;
+				// Open both sidebars
+				// Open left drawer (Permit sidebar) first
+				drawerTitle.value = 'Permit';
+				isDrawerOpen.value = true;
 
-			// Wait for Permit component to mount and load forms
-			await new Promise(resolve => setTimeout(resolve, 1000));
+				// Wait for Permit component to mount and load forms
+				await new Promise(resolve => setTimeout(resolve, 1000));
 
-			const formId = route.query.formid;
-			const normalizedFormId = formId.replace(/[{}]/g, '').toLowerCase();
+				const formId = route.query.formid;
+				const normalizedFormId = formId.replace(/[{}]/g, '').toLowerCase();
 
-			// Helper to find form by normalized ID
-			const findFormById = (id) => {
-				const normalize = (val) => String(val).replace(/[{}]/g, '').toLowerCase();
-				return accStore.items.find(item => item.form?.id && normalize(item.form.id) === id)?.form ||
-					accStore.forms.find(form => normalize(form.id) === id);
-			};
+				// Helper to find form by normalized ID
+				const findFormById = (id) => {
+					const normalize = (val) => String(val).replace(/[{}]/g, '').toLowerCase();
+					return accStore.items.find(item => item.form?.id && normalize(item.form.id) === id)?.form ||
+						accStore.forms.find(form => normalize(form.id) === id);
+				};
 
-			let matchingForm = findFormById(normalizedFormId);
+				let matchingForm = findFormById(normalizedFormId);
 
-			// Load more forms if not found 
-			const maxIterations = 100; // Safety limit
-			let iterations = 0;
+				// Load more forms if not found 
+				const maxIterations = 100; // Safety limit
+				let iterations = 0;
 
-			while (!matchingForm && accStore.pagination.offset < accStore.pagination.totalResults && iterations < maxIterations) {
-				const previousOffset = accStore.pagination.offset;
+				while (!matchingForm && accStore.pagination.offset < accStore.pagination.totalResults && iterations < maxIterations) {
+					const previousOffset = accStore.pagination.offset;
 
-				try {
-					await accStore.fetchForms(true);
+					try {
+						await accStore.fetchForms(true);
 
-					// Check if offset did not increase
-					if (accStore.pagination.offset === previousOffset) {
-						console.warn('Pagination offset did not increase, breaking loop to prevent infinite loop');
+						// Check if offset did not increase
+						if (accStore.pagination.offset === previousOffset) {
+							console.warn('Pagination offset did not increase, breaking loop to prevent infinite loop');
+							break;
+						}
+
+						// Check if error fetching forms
+						if (accStore.error) {
+							console.warn('Error fetching forms, breaking loop:', accStore.error);
+							break;
+						}
+
+						matchingForm = findFormById(normalizedFormId);
+						iterations++;
+					} catch (error) {
+						console.error('Error in form fetch loop:', error);
 						break;
 					}
-
-					// Check if error fetching forms
-					if (accStore.error) {
-						console.warn('Error fetching forms, breaking loop:', accStore.error);
-						break;
-					}
-
-					matchingForm = findFormById(normalizedFormId);
-					iterations++;
-				} catch (error) {
-					console.error('Error in form fetch loop:', error);
-					break;
 				}
-			}
 
-			if (iterations >= maxIterations) {
-				console.warn('Reached maximum iterations while searching for form');
-			}
+				if (iterations >= maxIterations) {
+					console.warn('Reached maximum iterations while searching for form');
+				}
 
-			if (matchingForm) {
-				// Set in store (Permit component will emit formSelected event)
-				accStore.setSelectedForm(matchingForm);
-				// HandleFormSelected will be called via Permit component's watcher
-			} else {
-				console.warn('Form not found:', formId);
-			}
+				if (matchingForm) {
+					// Set in store (Permit component will emit formSelected event)
+					accStore.setSelectedForm(matchingForm);
+					// HandleFormSelected will be called via Permit component's watcher
+				} else {
+					console.warn('Form not found:', formId);
+				}
 
-			console.log('popup', popupData.value);
+				console.log('popup', popupData.value);
+			}
+		} catch (error) {
+			console.error('Error processing formid from URL:', error);
+		} finally {
+			loadingZoom.value = false;
 		}
 	}
 });

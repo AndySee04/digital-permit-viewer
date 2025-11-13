@@ -12,7 +12,7 @@ const router = useRouter();
 
 // TODO: integrate project api from backend
 const projects = ref([
-    { id: 1, name: 'QTMP - Test Project' },
+    { id: 1, name: 'BCWF' },
 ])
 
 const selectedProject = ref(projects.value.find((project) => project.id === 1));

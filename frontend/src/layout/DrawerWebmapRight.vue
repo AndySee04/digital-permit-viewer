@@ -49,12 +49,12 @@
                   <div class="flex flex-col">
                     <label class="font-medium">Start Date</label>
                     <DatePicker v-model="actualStart" dateFormat="dd/mm/yy"
-                      :placeholder="actualStart ? undefined : 'Date were not set'" disabled />
+                      :placeholder="actualStart ? undefined : 'Date not set'" disabled />
                   </div>
                   <div class="flex flex-col">
                     <label class="font-medium">End Date</label>
                     <DatePicker v-model="actualFinish" dateFormat="dd/mm/yy"
-                      :placeholder="actualFinish ? undefined : 'Date were not set'" disabled />
+                      :placeholder="actualFinish ? undefined : 'Date not set'" disabled />
                   </div>
                 </div>
               </div>
